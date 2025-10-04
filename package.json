@@ -1,7 +1,7 @@
 {
   "name": "beautiful-noise-backend",
   "version": "1.0.0",
-  "description": "Backend server for Beautiful Noise website (video/audio upload and support)",
+  "description": "Backend server for Beautiful Noise — handles video/audio uploads and support info.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -17,7 +17,7 @@
     "support",
     "media-server"
   ],
-  "author": "Your Name",
+  "author": "marc502",
   "license": "MIT",
   "dependencies": {
     "express": "^4.18.2",
