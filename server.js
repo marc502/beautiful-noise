@@ -10,29 +10,28 @@ const PORT = process.env.PORT || 3000;
 const supportersFile = path.join(__dirname, 'supporters.json');
 const metadataFile = path.join(__dirname, 'media-metadata.json');
 
-// Enable CORS for your frontend origin
+// === Enable CORS for Vercel Frontend ===
 app.use(cors({
-  origin: 'https://beautiful-noise.vercel.app', // replace with your actual frontend URL
+  origin: 'https://beautiful-noise.vercel.app',
   methods: ['GET', 'POST', 'OPTIONS'],
 }));
 
-// Middleware to parse request bodies
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// Ensure upload directories exist (INSIDE backend/)
+// === Ensure upload directories exist ===
 ['uploads', 'uploads/videos', 'uploads/audios', 'uploads/thumbnails', 'uploads/temp'].forEach(dir => {
   const fullPath = path.join(__dirname, dir);
   if (!fs.existsSync(fullPath)) fs.mkdirSync(fullPath, { recursive: true });
 });
 
-// Serve frontend static files (adjust if needed for local testing)
+// === Serve frontend static files (optional for local testing only) ===
 app.use(express.static(path.join(__dirname, '../frontend')));
 
-// Multer upload config
+// === Multer setup ===
 const upload = multer({ dest: path.join(__dirname, 'uploads/temp/') });
 
-// Helpers to manage media metadata
+// === Metadata helper functions ===
 function readMetadata() {
   if (!fs.existsSync(metadataFile)) return [];
   try {
@@ -54,22 +53,17 @@ app.post('/upload', upload.fields([
   const mediaFile = req.files?.media?.[0];
   const thumbFile = req.files?.thumbnail?.[0];
 
-  if (!mediaFile) {
-    return res.status(400).send('No media file uploaded.');
-  }
+  if (!mediaFile) return res.status(400).send('No media file uploaded.');
 
   const mediaType = mediaFile.mimetype.startsWith('video') ? 'videos' : 'audios';
   const { videoName, username } = req.body;
 
-  // Build unique media filename
   const mediaExt = path.extname(mediaFile.originalname);
   const mediaFilename = `${Date.now()}${mediaExt}`;
   const mediaPath = path.join(__dirname, 'uploads', mediaType, mediaFilename);
 
-  // Move the media file
   fs.renameSync(mediaFile.path, mediaPath);
 
-  // Prepare metadata entry
   const metadataEntry = {
     filename: mediaFilename,
     videoName: videoName || mediaFile.originalname,
@@ -79,17 +73,16 @@ app.post('/upload', upload.fields([
     uploadedAt: Date.now()
   };
 
-  // Handle thumbnail if provided
+  // Handle optional thumbnail
   if (thumbFile) {
     const thumbExt = path.extname(thumbFile.originalname);
-    const thumbFilename = `${mediaFilename}${thumbExt}`;
+    const baseName = path.parse(mediaFilename).name; // e.g., remove .mp4
+    const thumbFilename = `${baseName}${thumbExt}`;
     const thumbPath = path.join(__dirname, 'uploads/thumbnails', thumbFilename);
     fs.renameSync(thumbFile.path, thumbPath);
-
     metadataEntry.thumbnail = `/media/thumbnails/${thumbFilename}`;
   }
 
-  // Save metadata
   const allMetadata = readMetadata();
   allMetadata.push(metadataEntry);
   saveMetadata(allMetadata);
@@ -97,7 +90,7 @@ app.post('/upload', upload.fields([
   res.json({ message: 'Upload successful.' });
 });
 
-// === Fetch Videos or Audios ===
+// === Fetch videos or audios ===
 app.get('/media/:type', (req, res) => {
   const type = req.params.type;
   if (!['videos', 'audios'].includes(type)) {
@@ -111,7 +104,7 @@ app.get('/media/:type', (req, res) => {
   res.json(mediaList);
 });
 
-// === Search Videos ===
+// === Search videos ===
 app.get('/media/videos/search', (req, res) => {
   const query = (req.query.q || '').toLowerCase().trim();
   if (!query) return res.json([]);
@@ -126,8 +119,7 @@ app.get('/media/videos/search', (req, res) => {
   res.json(results);
 });
 
-// === Serve media and thumbnails ===
-// Now serving from backend/uploads/
+// === Serve uploaded media ===
 app.use('/media', express.static(path.join(__dirname, 'uploads')));
 
 // === Support Info ===
@@ -138,7 +130,7 @@ app.get('/support', (req, res) => {
   });
 });
 
-// === Supporters (JSON file) ===
+// === Supporters endpoint ===
 app.get('/supporters', (req, res) => {
   try {
     if (!fs.existsSync(supportersFile)) return res.json([]);
@@ -151,7 +143,7 @@ app.get('/supporters', (req, res) => {
   }
 });
 
-// Start server
+// === Start Server ===
 app.listen(PORT, () => {
-  console.log(`✅ Server running at http://localhost:${PORT}`);
+  console.log(`✅ Server running on http://localhost:${PORT}`);
 });
