@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -8,6 +9,12 @@ const PORT = process.env.PORT || 3000;
 
 const supportersFile = path.join(__dirname, 'supporters.json');
 const metadataFile = path.join(__dirname, 'media-metadata.json');
+
+// Enable CORS for your frontend origin
+app.use(cors({
+  origin: 'https://beautiful-noise.vercel.app', // replace with your actual frontend URL
+  methods: ['GET', 'POST', 'OPTIONS'],
+}));
 
 // Middleware to parse request bodies
 app.use(express.urlencoded({ extended: true }));
